@@ -1,0 +1,86 @@
+# Prompt user for input
+$userInput = Read-Host "Are you at work? (y/n)"
+
+# Check user input and execute appropriate script
+if ($userInput -eq 'y') {
+    # First script execution
+    # Function to set Monitor 1 as default
+    function Set-DefaultMonitor {
+        param (
+            [int]$monitorNumber
+        )
+
+        # Use DisplaySwitch.exe to set Monitor 1 as default
+        & "$($env:SystemRoot)\System32\DisplaySwitch.exe" /internal
+    }
+
+    # Function to toggle secondary monitors
+    function Toggle-SecondaryMonitors {
+        # Use DisplaySwitch.exe to toggle secondary monitors
+        & "$($env:SystemRoot)\System32\DisplaySwitch.exe" /extend
+    }
+
+    # Function to set Monitor 1 as main display
+    function Set-MainDisplay {
+        param (
+            [int]$monitorNumber
+        )
+
+        # Use DisplaySwitch.exe to set Monitor 1 as main display
+        & "$($env:SystemRoot)\System32\DisplaySwitch.exe" /display:1
+    }
+
+    # Check if Monitor 1 is already default and secondary monitors are disabled
+    $defaultMonitor = Get-WmiObject -Namespace root\cimv2 -Class Win32_DesktopMonitor | Where-Object { $_.DeviceID -eq "DISPLAY1" }
+    $secondaryMonitorsDisabled = (Get-WmiObject -Namespace root\cimv2 -Class Win32_DesktopMonitor | Where-Object { $_.DeviceID -ne "DISPLAY1" }).Count -eq 0
+
+    if ($defaultMonitor -and $secondaryMonitorsDisabled) {
+        # Monitor 1 is already default and secondary monitors are already disabled, so nothing to do
+        Write-Host "Monitor 1 is already default and secondary monitors are already disabled."
+    } else {
+        # Disable secondary monitors
+        Toggle-SecondaryMonitors
+
+        # Set Monitor 1 as default
+        Set-DefaultMonitor -monitorNumber 1
+
+        # Set Monitor 1 as main display
+        Set-MainDisplay -monitorNumber 1
+
+        Write-Host "Monitor 1 set as default and main display."
+    }
+}
+elseif ($userInput -eq 'n') {
+    # Second script execution
+    # Function to extend desktop to monitors 2 & 3
+    function Extend-DesktopToMonitors2And3 {
+        # Use DisplaySwitch.exe to extend desktop to monitors 2 & 3
+        & "$($env:SystemRoot)\System32\DisplaySwitch.exe" /extend
+    }
+
+    # Function to set Monitor 3 as main display
+    function Set-Monitor3AsMainDisplay {
+        # Use DisplaySwitch.exe to set Monitor 3 as main display
+        & "$($env:SystemRoot)\System32\DisplaySwitch.exe" /display:3
+    }
+
+    # Check if desktop is already extended to monitors 2 & 3 and Monitor 3 is already main display
+    $desktopExtended = (Get-WmiObject -Namespace root\cimv2 -Class Win32_DesktopMonitor | Where-Object { $_.DeviceID -ne "DISPLAY1" }).Count -eq 2
+    $monitor3Main = (Get-WmiObject -Namespace root\cimv2 -Class Win32_DesktopMonitor | Where-Object { $_.DeviceID -eq "DISPLAY3" }).Count -eq 1
+
+    if ($desktopExtended -and $monitor3Main) {
+        # Desktop is already extended to monitors 2 & 3 and Monitor 3 is already main display, so nothing to do
+        Write-Host "Desktop is already extended to monitors 2 & 3 and Monitor 3 is already main display."
+    } else {
+        # Extend desktop to monitors 2 & 3
+        Extend-DesktopToMonitors2And3
+
+        # Set Monitor 3 as main display
+        Set-Monitor3AsMainDisplay
+
+        Write-Host "Desktop extended to monitors 2 & 3 and Monitor 3 set as main display."
+    }
+}
+else {
+    Write-Host "Invalid input. Please enter 'y' or 'n'."
+}
